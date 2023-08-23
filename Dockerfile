@@ -1,14 +1,21 @@
-FROM openlabs/docker-wkhtmltopdf:latest
-MAINTAINER Sharoon Thomas <sharoon.thomas@openlabs.co.in>
+FROM ubuntu:jammy
 
-# Install dependencies for running web service
-RUN apt-get install -y python-pip
-RUN pip install werkzeug executor gunicorn
+RUN apt update
+RUN apt upgrade -y
+RUN apt install -y build-essential xorg libssl-dev libxrender-dev wget gdebi
+RUN wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6.1-2/wkhtmltox_0.12.6.1-2.jammy_amd64.deb
+RUN gdebi --n wkhtmltox_0.12.6.1-2.jammy_amd64.deb
 
-ADD app.py /app.py
+RUN wget -qO- https://deb.nodesource.com/setup_18.x | bash
+RUN apt install -y nodejs
+
+ADD package.json /package.json
+ADD package-lock.json /package-lock.json
+
+RUN npm install
+
+ADD app.mjs /app.mjs
+
 EXPOSE 80
 
-ENTRYPOINT ["usr/local/bin/gunicorn"]
-
-# Show the extended help
-CMD ["-b", "0.0.0.0:80", "--log-file", "-", "app:application"]
+CMD ["node", "app.mjs"]
